@@ -1,0 +1,62 @@
+services:
+  laravel:
+    build:
+      args:
+        user: sammy
+        uid: 1000
+      context: .
+      dockerfile: Dockerfile
+    image: laravel/api
+    container_name: api
+    restart: unless-stopped
+    tty: true
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - app_network
+
+  db:
+    image: mysql:5.7
+    container_name: db
+    restart: unless-stopped
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ALLOW_EMPTY_PASSWORD: true
+      # MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      # MYSQL_USER: ${DB_USERNAME}
+    volumes:
+      - mysqldata:/var/lib/mysql/
+      - ./schema:/schema
+    networks:
+      - app_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: unless-stopped
+    tty: true
+    ports:
+      - 8000:8001
+    volumes:
+      - ./:/var/www/html
+      - ./nginx/conf.d:/etc/nginx/conf.d/
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 25.12.0.0/24
+
+volumes:
+  mysqldata:
+    driver: local
+  schema:
+    driver: local
